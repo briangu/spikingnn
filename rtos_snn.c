@@ -122,6 +122,7 @@ void iterateNeuralNetwork(void) {
 
   // Debugging
   printf("%x\n\r", neuron);
+
   //////////////Refractory Period/Contribution of Incoming Spikes/Membrane Potential Update//////////////
   for (i = 0; i < numneuron; i++) {
     // Refractory Period Check (if spike generated in previous update, don't update membrane potential)
@@ -183,7 +184,7 @@ void iterateNeuralNetwork(void) {
   //////////////////////////////////////////Motor Spike//////////////////////////////////////////////////
   // 1st neuron is left forward motor, 2nd is left backward motor, 3rd if right forward motor, 4th is right backward motor
   // If spiking add to total number of spikes
-  if ((neuron & 0x01) == 1) {
+  if ((neuron & 0x01) == 1) { // TODO: replace with "if (neuron & 0x01)"
     spikeFL++;
     totalspikeFL++;
   }
@@ -203,6 +204,7 @@ void iterateNeuralNetwork(void) {
   maxspikes++;
 
   printf("%x %i %i %i %i\n\r", neuron, spikeFL, spikeBL, spikeFR, spikeBR);
+
   ///////////////////////////////////////////Leakage/////////////////////////////////////////////////////
   for (k = 0; k < numneuron; k++) {
     if ((memb[k] - leaking) >= minimum) {
@@ -215,7 +217,6 @@ void iterateNeuralNetwork(void) {
 
 ////////////////////////////////////////////////////////////////
 void initialize(void) {
-  // Generate Random Seed
   generateRandomSeed();
 
   sensorflag = 0;
@@ -224,24 +225,27 @@ void initialize(void) {
   // Neuron Variables
   neuron = 0; // Output of Neurons (1 is spike, 0 is no spike), ie. 0b11001100 means neurons 2, 3, 6, 7 are spiking, sensors 0, 1, 4, 5 are not
   sensor = 0; // Output of Sensors (1 is spike, 0 is no spike), ie. 0b11001100 means sensors 2, 3, 6, 7 are spiking, sensors 0, 1, 4, 5 are not
-  individual = (rand() % (numindivid)); // Current Individual (0 - 5)
+  individual = (rand() % numindivid); // Current Individual (0 - 5)
 
   // The population will be initialized using random numbers and all fitness values will be set to zero
   // Use EEPROM if already started a population
   for (b = 0; b < numindivid; b++) {
     signs[b] = (rand() % (1 << numneuron)); // Sign of Neurons (1 is positive, 0 is negative), ie. 0b00001111 means neurons 0, 1, 2, 3 are positive, neurons 4, 5, 6, 7 are not
-    // Debugging
-    printf("%x\n\r", signs[b]);
+
+    printf("%x\n\r", signs[b]); // Debugging
+
     for (a = 0; a < numneuron; a++) {
       nconnection[b][a] = (rand() % (1 << numneuron)); // Connections from Neurons, each char describes connections for one neuron (1 is connection, 0 is no connection), ie. 0b11001010 means there are connections to this neuron from neurons 1, 3, 6, 7 and no connection from neurons 0, 2, 4, 5
       sconnection[b][a] = (rand() % (1 << numsensor)); // Connections from Sensors, each char describes connections from one sensor (1 is connection, 0 is no connection)
       memb[a] = 0; // Membrane Potential of each Neuron (minimum value of 0, initialized to 0)
     }
-    // Debugging
-    printf("%x\n\r", sconnection[b][0]);
+
+    printf("%x\n\r", sconnection[b][0]); // Debugging
+
     fitness[b] = 0; // Fitness value for an individual
     threshold[b] = (rand() % 4 + 3); // Membrane Threshold (5)
   }
+
   leaking = 1; // Leaking Constant (1)
   minimum = 0; // Miminum Membrane Potential (0)
   randomint = 0; // Randomly generated integer
@@ -299,10 +303,9 @@ void initialize(void) {
   // Print out Current EEPROM Best Fitness (if avaliable)
 }
 
-////////////////////////////////////////////////////////////////
 void updateSensors(void) {
-  ////////////////////////////////////////Sensor Update//////////////////////////////////////////////////
   collision = 0; // Reset collision before recalculating
+
   for (x = 1; x <= ((numsensor / 3) + 1); x++) {
   } // Ends for loop for sensor update
 
@@ -318,7 +321,7 @@ void updateSensors(void) {
 
   // Debugging
   // This is the way to get the most random bits in, based on noise, will OR with regular senorread to get sensor values when plugged back into robot
-  sensorread = (sensorread | (((rand() % 2) << 0) | ((rand() % 2) << 3) | ((rand() % 2) << 6) | ((rand() % 2) << 9) | ((rand() % 2) << 12)));
+  // sensorread = (sensorread | (((rand() % 2) << 0) | ((rand() % 2) << 3) | ((rand() % 2) << 6) | ((rand() % 2) << 9) | ((rand() % 2) << 12)));
   //sensorread = (((rand()%2) << 0)|((rand() %2) << 3)|((rand() %2) << 6)|((rand() %2) << 9)|((rand() %2) << 12));
   //collision = 0;
   //sensormaxactivity = 0;
@@ -326,128 +329,81 @@ void updateSensors(void) {
 
   // Ready sensor and motor update
   sensorflag = 1;
-} // Ends task 4
+}
 
 
-////////////////////////////////////////////////////////////////
+///////////////////////////////////////Motor Speed Update//////////////////////////////////////////////
+// Motor speed for next 20ms is for each motor: spikesforward-spikesbackward scaled to [-8 cm/s, 8 cm/s]
+// Velocity will be determined by time of each step which is equal to .332485 cm / (spikesforward-spikesbackward)
+// Ie. this is initialized to .332485 cm / 3.32483 cm / s = .1 s = 100 ms
+// Concern here is that time will always be significantly higher than next motor udpate time, risk?
 void updateMotorSpeed(void) {
-
-  // Only do Motor Speed Update every 160 ms, this allows for max 8 cm/s at least one movemnet since it takes 41ms to execute
-  ///////////////////////////////////////Motor Speed Update//////////////////////////////////////////////
-  // Motor speed for next 20ms is for each motor: spikesforward-spikesbackward scaled to [-8 cm/s, 8 cm/s]
-  // Velocity will be determined by time of each step which is equal to .332485 cm / (spikesforward-spikesbackward)
-  // Ie. this is initialized to .332485 cm / 3.32483 cm / s = .1 s = 100 ms
-  // Concern here is that time will always be significantly higher than next motor udpate time, risk?
-  //printf("%li %li %li %li %ld\n\r", spikeFL, spikeBL, spikeFR, spikeBR, maxspikes);
-  if (spikeFL >= spikeBL) // If more forward then back, direction is forward
-  {
-    // Debugging
+  printf("updateMotorSpeed: %i %i %i %i %ld\n\r", spikeFL, spikeBL, spikeFR, spikeBR, maxspikes);
+  if (spikeFL >= spikeBL) { // If more forward then back, direction is forward
     dirL = 0;
     // Multiply by 8.0 since maxspikes is actually maxspikes * 2 since if a neuron does spike it won't spike twice in a row because of the refractory period
     v2 = ((float)((float)((float) spikeFL - (float) spikeBL) / (float) maxspikes) * 2.0 * 8.0);
-    // Debugging (comment out t2 change)
-    // t2 = (0.332485 / v2 * 1000.0);
-    // time2 = t2;
   } else {
-    // Debugging
     dirL = 1;
     v2 = ((float)((float)((float) spikeBL - (float) spikeFL) / (float) maxspikes) * 2.0 * 8.0);
-    // Debugging
-    // t2 = (0.332485 / v2 * 1000.0);
-    // time2 = t2;
   }
-  if (spikeFR >= spikeBR) // If more forward then back, direction is forward
-  {
-    // Debugging
+  if (spikeFR >= spikeBR) { // If more forward then back, direction is forward
     dirR = 0;
     v3 = ((float)((float)((float) spikeFR - (float) spikeBR) / (float) maxspikes) * 2.0 * 8.0);
-    // Debugging
-    // t3 = (0.332485 / v3 * 1000.0);
-    // time3 = t3;
   } else {
-    // Debugging
     dirR = 1;
     v3 = ((float)((float)((float) spikeBR - (float) spikeFR) / (float) maxspikes) * 2.0 * 8.0);
-    // Debugging
-    // t3 = (0.332485 / v3 * 1000.0);
-    // time3 = t3;
-  } // } Motor Speed update
+  }
+}
 
-  // Set tsk4cnt to be the greater of the times 350>tsk4cnt>60
-  // if (t2 > t3 && t2 <= 350) {
-  //   tsk4cnt = t2 + 10;
-  // } else if (t3 > t2 && t3 <= 350) {
-  //   tsk4cnt = t3 + 10;
-  // } else tsk4cnt = 60;
-  //printf("%li %li\n\r", t2, t3);
-
-  // Fitness Calculation
+void updateFitness(void) {
+  printf("updateFitness: %i %i %f %f\n\r", dirL, dirR, newfitness, sensormaxactivity);
   if (dirL == 0 && dirR == 0 && collision == 0) // As long as going forward on both wheels and no collision
   {
+    // TODO: math.abs(v2 - v3)
+    // newfitness = newfitness + (v2 + v3) * (1.0 - (math.abs(v2 - v3) / 8.0)) * (1.0 - (sensormaxactivity)); // Need to add something to sensor
+    // change = (v2+v3)*(1.0-(math.abs(v2 - v3)/8.0))*(1.0-(sensormaxactivity));
+    // newfitness += change;
+    // printf("%5.2f", change);
     if (v2 >= v3) {
       newfitness = newfitness + (v2 + v3) * (1.0 - ((v2 - v3) / 8.0)) * (1.0 - (sensormaxactivity)); // Need to add something to sensor
-      //change = (v2+v3)*(1.0-((v2-v3)/8.0))*(1.0-(sensormaxactivity));
-      //printf("%5.2f", change);
     } else {
       newfitness = newfitness + (v2 + v3) * (1.0 - ((v3 - v2) / 8.0)) * (1.0 - (sensormaxactivity)); // Need to add something to sensor
-      //change = (v2+v3)*(1.0-((v3-v2)/8.0))*(1.0-(sensormaxactivity));
-      //printf("%5.2f", change);
     }
   } else if ((dirL == 1 || dirR == 1) && collision == 0) {
-    newfitness = newfitness + 0;
-    //printf("YES\n\r");
+    // newfitness = newfitness + 0;
   } else if (collision == 1) {
-    newfitness = newfitness + 0;
-    //printf("NO\n\r");
+    // newfitness = newfitness + 0;
   }
 }
 
 ////////////////////////////////////////////////////////////////
 void updateLeftMotor(void) {
-  // Left Motor
-  // Stepper Motor moves 7.5 degree per step, so 48 steps / rev (360 / 7.5). Circumference of wheel is 15.9593 cm / rev (2 inch * 2.54 cm/ in * pi / 2).
-  // Velocity = 15.9593 cm / rev * 1/48 rev / (t2 / 1000 s) = .332485 cm / (t2/1000 s)
-  // Wire Configuration: Orange to C.0, Yellow to C.1, Brown to C.2, Black to C.3, Red and Green to 12V
-  // if (stepL == 3) PORTC = (PORTC & 0b11110000) | 1;
-  // if (stepL == 2) PORTC = (PORTC & 0b11110000) | 4;
-  // if (stepL == 1) PORTC = (PORTC & 0b11110000) | 2;
-  // if (stepL == 0) PORTC = (PORTC & 0b11110000) | 8;
-  if (dirL) // 0 is forward, 1 is backward
-  {
-    printf("left: forward\n");
-  } else {
+  // 0 is forward, 1 is backward
+  if (dirL) {
     printf("left: backward\n");
+  } else {
+    printf("left: forward\n");
   }
 }
 
 ////////////////////////////////////////////////////////////////
 void updateRightMotor(void) {
-  // Right Motor
-  // Stepper Motor moves 7.5 degree per step, so 48 steps / rev (360 / 7.5). Circumference of wheel is 15.9593 cm / rev (2 inch * 2.54 cm/ in * pi / 2).
-  // Velocity = 15.9593 cm / rev * 1/48 rev / (t2 / 1000 s) = .332485 cm / (t3/1000 s)
-  // Wire Configuration: Orange to C.4, Yellow to C.5, Brown to C.6, Black to C.7, Red and Green to 12V
-  // if (stepR == 3) PORTC = (PORTC & 0b00001111) | 16;
-  // if (stepR == 2) PORTC = (PORTC & 0b00001111) | 64;
-  // if (stepR == 1) PORTC = (PORTC & 0b00001111) | 32;
-  // if (stepR == 0) PORTC = (PORTC & 0b00001111) | 128;
-  if (dirR) // 0 is forward, 1 is backward
-  {
-    printf("right: forward\n");
-  } else {
+  if (dirR) { // 0 is forward, 1 is backward
     printf("right: backward\n");
+  } else {
+    printf("right: forward\n");
   }
 }
 
 // Neuron Individual Selection and Mutation
+// Fitness Check - If not greater return to old version in population
 void evolve(void) {
-  // Fitness Check - If not greater return to old version in population
-  // Debugging
-  printf("%i %i %i %i %i %i %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f\n\r", individual, threshold[individual], totalspikeFL, totalspikeBL, totalspikeFR, totalspikeBR, newfitness, fitness[0], fitness[1], fitness[2], fitness[3], fitness[4], fitness[5]);
+  printf("evolve begin: %i %i %i %i %i %i %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f\n\r", individual, threshold[individual], totalspikeFL, totalspikeBL, totalspikeFR, totalspikeBR, newfitness, fitness[0], fitness[1], fitness[2], fitness[3], fitness[4], fitness[5]);
 
   worstindivid = 0;
 
-  for (z = 1; z < numindivid; z++) // Calculate Worst Individual
-  {
+  for (z = 1; z < numindivid; z++) { // Calculate Worst Individual
     if (fitness[z] < fitness[worstindivid]) {
       worstindivid = z;
     }
@@ -456,7 +412,9 @@ void evolve(void) {
   if (newfitness >= fitness[worstindivid] && newfitness >= fitness[individual]) {
     keep = 1;
     fitness[individual] = newfitness;
-  } else keep = 0;
+  } else {
+    keep = 0;
+  }
 
   newfitness = 0; // Reset newfitness
 
@@ -471,8 +429,7 @@ void evolve(void) {
 
   // Pick a random individual and mutate it
   individual = (rand() % numindivid);
-  // Debugging
-  //individual = 0;
+
   // Save old version
   oldsigns = signs[individual];
   for (e = 0; e < numneuron; e++) {
@@ -480,6 +437,7 @@ void evolve(void) {
     oldsconnection[e] = sconnection[individual][e];
   }
   oldthreshold = threshold[individual];
+
   // Mutate
   signs[individual] = (signs[individual] ^ (1 << (rand() % numneuron)));
   randn = (rand() % numneuron);
@@ -488,10 +446,11 @@ void evolve(void) {
   sconnection[individual][rands] = (sconnection[individual][rands] ^ (1 << (rand() % numsensor)));
   threshold[individual] = (threshold[individual] ^ (1 << (rand() % 4)));
   if (threshold[individual] > 6 || threshold[individual] < 2) threshold[individual] = oldthreshold;
+
   // Send signal
   evolveflag = 1;
-  // Debugging
-  printf("%i %x %x %x %x\n\r", individual, signs[individual], nconnection[individual][randn], sconnection[individual][rands], sensor);
+
+  printf("evolve end: %i %x %x %x %x\n\r", individual, signs[individual], nconnection[individual][randn], sconnection[individual][rands], sensor);
 }
 
 void storeBestFitness(void) {
@@ -534,6 +493,7 @@ int main() {
   evolve();
   updateSensors();
   updateMotorSpeed();
+  updateFitness();
   updateLeftMotor();
   updateRightMotor();
   storeBestFitness();
