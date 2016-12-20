@@ -10,8 +10,6 @@
 
 unsigned int i, j, k, x, a, b, c, d, e, f, y, z, g, h, ii, jj, kk, xx, yy, zz;
 
-void initialize(void); // Initialize
-
 // Task variables
 unsigned char sensorflag; // Flag that indicates Sensors have been updated (1 updated, 0 not updated)
 unsigned char evolveflag; // Flag that indicates a mutation has just occurred
@@ -36,6 +34,10 @@ unsigned char oldnconnection[numneuron];
 unsigned int oldsconnection[numneuron];
 unsigned int oldthreshold;
 
+// ADC Variables
+unsigned int Ain; // Current ADC input
+unsigned int Ain2; // DEBUG for Noise for ADCL
+float voltage; // Current ADC input converted into voltage
 unsigned int sensorread; // Values of Sensors being read
 float probability; // Probability of getting a random noise spike
 float randomprob; // Random probability
@@ -71,8 +73,24 @@ float change; // Change in fitness (debugging)
 unsigned int bestfitness; // Best Fitness so far
 unsigned int bestindivid; // Best Individual
 
+void generateRandomSeed() {
+  //randomseed = randomseed/(numsensor/3);
+  randomseed = 0;
+  srand(randomseed);
+}
+
 int mapRand() {
-  return 0; // TODO: use rand() and scale to [-2,2]
+  return ((rand() % 5) - 2); // scale to [-2,2]
+}
+
+void addSpikeToNeuralNetwork() {
+  memb[0] = threshold[individual] + 20;
+  memb[2] = threshold[individual] + 20;
+  // Debugging
+  //memb[4] = threshold[individual] + 20;
+  //memb[5] = threshold[individual] + 20;
+  //memb[6] = threshold[individual] + 20;
+  //memb[7] = threshold[individual] + 20;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -92,13 +110,8 @@ void iterateNeuralNetwork(void) {
 
   if (evolveflag == 1) { // If just evolved
     // Spike Forward Motor Neurons to start
-    memb[0] = threshold[individual] + 20;
-    memb[2] = threshold[individual] + 20;
-    // Debugging
-    //memb[4] = threshold[individual] + 20;
-    //memb[5] = threshold[individual] + 20;
-    //memb[6] = threshold[individual] + 20;
-    //memb[7] = threshold[individual] + 20;
+    addSpikeToNeuralNetwork();
+
     evolveflag = 0;
 
     totalspikeFL = 0;
@@ -203,8 +216,7 @@ void iterateNeuralNetwork(void) {
 ////////////////////////////////////////////////////////////////
 void initialize(void) {
   // Generate Random Seed
-  randomseed = 0;
-  srand(randomseed);
+  generateRandomSeed();
 
   sensorflag = 0;
   evolveflag = 0; // Flag that indicates a mutation has just occurred
@@ -235,12 +247,7 @@ void initialize(void) {
   randomint = 0; // Randomly generated integer
 
   // Spike Forward Motor Neurons to start
-  memb[0] = threshold[individual] + 20;
-  memb[2] = threshold[individual] + 20;
-  //memb[4] = threshold[individual] + 20;
-  //memb[5] = threshold[individual] + 20;
-  //memb[6] = threshold[individual] + 20;
-  //memb[7] = threshold[individual] + 20;
+  addSpikeToNeuralNetwork();
 
   // Old Values
   oldsigns = signs[individual];
@@ -298,8 +305,8 @@ void updateSensors(void) {
   collision = 0; // Reset collision before recalculating
   for (x = 1; x <= ((numsensor / 3) + 1); x++) {
   } // Ends for loop for sensor update
-  //randomseed = randomseed/(numsensor/3);
-  //srand(randomseed);
+
+  generateRandomSeed();
 
   // Calculate max sensor actiivty
   sensormaxactivity = sensoractivity[0];
@@ -436,13 +443,16 @@ void evolve(void) {
   // Fitness Check - If not greater return to old version in population
   // Debugging
   printf("%i %i %i %i %i %i %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f\n\r", individual, threshold[individual], totalspikeFL, totalspikeBL, totalspikeFR, totalspikeBR, newfitness, fitness[0], fitness[1], fitness[2], fitness[3], fitness[4], fitness[5]);
+
   worstindivid = 0;
+
   for (z = 1; z < numindivid; z++) // Calculate Worst Individual
   {
     if (fitness[z] < fitness[worstindivid]) {
       worstindivid = z;
     }
   }
+
   if (newfitness >= fitness[worstindivid] && newfitness >= fitness[individual]) {
     keep = 1;
     fitness[individual] = newfitness;
@@ -482,7 +492,7 @@ void evolve(void) {
   evolveflag = 1;
   // Debugging
   printf("%i %x %x %x %x\n\r", individual, signs[individual], nconnection[individual][randn], sconnection[individual][rands], sensor);
-} // Ends task 5
+}
 
 void storeBestFitness(void) {
   // Store Best Fitness Individual in EEPROM
