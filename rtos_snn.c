@@ -5,28 +5,28 @@
 // These defines effect values everywhere and the majority of the program will adjust when these are changes
 // The two sections that will not adjust is the membrane potential update and the sensor update, please be aware of this
 #define numneuron 8
-#define numsensor 15 // Bits of Sensor
+#define numsensor 15  // Bits of Sensor
 #define numindivid 6
 
 unsigned int i, j, k, x, a, b, c, d, e, f, y, z, g, h, ii, jj, kk, xx, yy, zz;
 
 // Task variables
-unsigned char sensorflag; // Flag that indicates Sensors have been updated (1 updated, 0 not updated)
-unsigned char evolveflag; // Flag that indicates a mutation has just occurred
+unsigned char sensorflag;  // Flag that indicates Sensors have been updated (1 updated, 0 not updated)
+unsigned char evolveflag;  // Flag that indicates a mutation has just occurred
 
 // Neuron Variables
-unsigned char individual; // Currently Selected Individual of the population (0 - 5)
-unsigned char neuron; // Output of Neurons (1 is spike, 0 is no spike), ie. 0b11001100 means neurons 2, 3, 6, 7 are spiking, neurons 0, 1, 4, 5 are not
-unsigned int sensor; // Output of Sensors (1 is spike, 0 is no spike), ie. 0b11001100 means sensors 2, 3, 6, 7 are spiking, sensors 0, 1, 4, 5 are not
-unsigned char signs[numindivid]; // Sign of Neurons (1 is positive, 0 is negative), ie. 0b00001111 means neurons 0, 1, 2, 3 are positive, neurons 4, 5, 6, 7 are not
-unsigned char nconnection[numindivid][numneuron]; // Connections from Neurons, each char describes connections for one neuron (1 is connection, 0 is no connection), ie. 0b11001010 means there are connections to this neuron from neurons 1, 3, 6, 7 and no connection from neurons 0, 2, 4, 5
-unsigned int sconnection[numindivid][numneuron]; // Connections from Sensors, each char describes connections from one sensor (1 is connection, 0 is no connection) to each neuron
-signed int memb[numneuron]; // Membrane Potential of each Neuron (minimum value of 0, initialized to 0)
-float fitness[numindivid]; // Fitness value for an individual
-unsigned int threshold[numindivid]; // Membrane Threshold (5) - DEBUG BEING SET TO EVOLVE RANDOMLY BETWEEN 2 AND 6
-unsigned char leaking; // Leaking Constant (1)
-unsigned char minimum; // Miminum Membrane Potential (0)
-unsigned int randomint; // Randomly generated integer
+unsigned char individual;                          // Currently Selected Individual of the population (0 - 5)
+unsigned char neuron;                              // Output of Neurons (1 is spike, 0 is no spike), ie. 0b11001100 means neurons 2, 3, 6, 7 are spiking, neurons 0, 1, 4, 5 are not
+unsigned int sensor;                               // Output of Sensors (1 is spike, 0 is no spike), ie. 0b11001100 means sensors 2, 3, 6, 7 are spiking, sensors 0, 1, 4, 5 are not
+unsigned char signs[numindivid];                   // Sign of Neurons (1 is positive, 0 is negative), ie. 0b00001111 means neurons 0, 1, 2, 3 are positive, neurons 4, 5, 6, 7 are not
+unsigned char nconnection[numindivid][numneuron];  // Connections from Neurons, each char describes connections for one neuron (1 is connection, 0 is no connection), ie. 0b11001010 means there are connections to this neuron from neurons 1, 3, 6, 7 and no connection from neurons 0, 2, 4, 5
+unsigned int sconnection[numindivid][numneuron];   // Connections from Sensors, each char describes connections from one sensor (1 is connection, 0 is no connection) to each neuron
+signed int memb[numneuron];                        // Membrane Potential of each Neuron (minimum value of 0, initialized to 0)
+float fitness[numindivid];                         // Fitness value for an individual
+unsigned int threshold[numindivid];                // Membrane Threshold (5) - DEBUG BEING SET TO EVOLVE RANDOMLY BETWEEN 2 AND 6
+unsigned char leaking;                             // Leaking Constant (1)
+unsigned char minimum;                             // Miminum Membrane Potential (0)
+unsigned int randomint;                            // Randomly generated integer
 
 // Old Variables
 unsigned char oldsigns;
@@ -35,43 +35,43 @@ unsigned int oldsconnection[numneuron];
 unsigned int oldthreshold;
 
 // ADC Variables
-unsigned int Ain; // Current ADC input
-unsigned int Ain2; // DEBUG for Noise for ADCL
-float voltage; // Current ADC input converted into voltage
-unsigned int sensorread; // Values of Sensors being read
-float probability; // Probability of getting a random noise spike
-float randomprob; // Random probability
+unsigned int Ain;         // Current ADC input
+unsigned int Ain2;        // DEBUG for Noise for ADCL
+float voltage;            // Current ADC input converted into voltage
+unsigned int sensorread;  // Values of Sensors being read
+float probability;        // Probability of getting a random noise spike
+float randomprob;         // Random probability
 
 // Motor Variables
-unsigned char stepL; // Step variable for Left Motor
-unsigned char stepR; // Step variable for Right Motor
-unsigned char dirL; // Direction variable for Left Motor (0 Forward or 1 Backward)
-unsigned char dirR; // Direction variable for Right Motor (0 Forward or 1 Backward)
-unsigned char spikeFL; // Number of spikes during sensor update period (20 ms) generated by forward left neuron
-unsigned char totalspikeFL; // Total spikes between evolution
-unsigned char spikeBL; // Number of spikes during sensor update period (20 ms) generated by backward left neuron
-unsigned char totalspikeBL; // Total spikes between evolution
-unsigned char spikeFR; // Number of spikes during sensor update period (20 ms) generated by forward right neuron
-unsigned char totalspikeFR; // Total spikes between evolution
-unsigned char spikeBR; // Number of spikes during sensor update period (20 ms) generated by backward right neuron
-unsigned char totalspikeBR; // Total spikes between evolution
-unsigned long maxspikes; // Number of possible spikes during sensor update period
-float v2, v3; // Motor Velocities
+unsigned char stepL;         // Step variable for Left Motor
+unsigned char stepR;         // Step variable for Right Motor
+unsigned char dirL;          // Direction variable for Left Motor (0 Forward or 1 Backward)
+unsigned char dirR;          // Direction variable for Right Motor (0 Forward or 1 Backward)
+unsigned char spikeFL;       // Number of spikes during sensor update period (20 ms) generated by forward left neuron
+unsigned char totalspikeFL;  // Total spikes between evolution
+unsigned char spikeBL;       // Number of spikes during sensor update period (20 ms) generated by backward left neuron
+unsigned char totalspikeBL;  // Total spikes between evolution
+unsigned char spikeFR;       // Number of spikes during sensor update period (20 ms) generated by forward right neuron
+unsigned char totalspikeFR;  // Total spikes between evolution
+unsigned char spikeBR;       // Number of spikes during sensor update period (20 ms) generated by backward right neuron
+unsigned char totalspikeBR;  // Total spikes between evolution
+unsigned long maxspikes;     // Number of possible spikes during sensor update period
+float vL, vR;                // Motor Velocities
 
 // Evolution Variables
-float newfitness; // Calculates new fitness to compare with old fitnesses
-unsigned char keep; // Keep determines if we will keep a mutation, is 1 if it the current individuals fitness is >= worst individuals fitness
-unsigned char collision; // Indicates a collision for fitness calculation (0 is no collision, 1 collision)
-float sensormaxactivity; // Most active sensor value for fitness calculation (5 values for this based on most active sensor: 0 if nothing, .25 if between top and mid, .5 if between mid and bot, .75 if between bot and col, 1 if below or equal to col)
-float sensoractivity[numsensor / 3]; // Activity of 5 sensors based on values above to be maxed
-unsigned char worstindivid; // Worst indiviudal used to determine keep
-unsigned char randn, rands; // Random Variables to access blocks in random individual for mutation
+float newfitness;                     // Calculates new fitness to compare with old fitnesses
+unsigned char keep;                   // Keep determines if we will keep a mutation, is 1 if it the current individuals fitness is >= worst individuals fitness
+unsigned char collision;              // Indicates a collision for fitness calculation (0 is no collision, 1 collision)
+float sensormaxactivity;              // Most active sensor value for fitness calculation (5 values for this based on most active sensor: 0 if nothing, .25 if between top and mid, .5 if between mid and bot, .75 if between bot and col, 1 if below or equal to col)
+float sensoractivity[numsensor / 3];  // Activity of 5 sensors based on values above to be maxed
+unsigned char worstindivid;           // Worst indiviudal used to determine keep
+unsigned char randn, rands;           // Random Variables to access blocks in random individual for mutation
 unsigned int randomseed;
-float change; // Change in fitness (debugging)
+float change;  // Change in fitness (debugging)
 
 // Fitness Store variables
-unsigned int bestfitness; // Best Fitness so far
-unsigned int bestindivid; // Best Individual
+unsigned int bestfitness;  // Best Fitness so far
+unsigned int bestindivid;  // Best Individual
 
 void generateRandomSeed() {
   //randomseed = randomseed/(numsensor/3);
@@ -80,7 +80,7 @@ void generateRandomSeed() {
 }
 
 int mapRand() {
-  return ((rand() % 5) - 2); // scale to [-2,2]
+  return ((rand() % 5) - 2);  // scale to [-2,2]
 }
 
 void addSpikeToNeuralNetwork() {
@@ -97,7 +97,7 @@ void addSpikeToNeuralNetwork() {
 void iterateNeuralNetwork(void) {
   // Sensor/Motor Updating
   if (sensorflag == 0) {
-    sensor = 0; // If sensors aren't ready, sensor nodes shouldn't be spiking
+    sensor = 0;  // If sensors aren't ready, sensor nodes shouldn't be spiking
   } else {
     sensor = sensorread;
     sensorflag = 0;
@@ -108,7 +108,7 @@ void iterateNeuralNetwork(void) {
     maxspikes = 0;
   }
 
-  if (evolveflag == 1) { // If just evolved
+  if (evolveflag == 1) {  // If just evolved
     // Spike Forward Motor Neurons to start
     addSpikeToNeuralNetwork();
 
@@ -129,36 +129,36 @@ void iterateNeuralNetwork(void) {
     if (((neuron >> i) & 0x01) == 0) {
       // Calculate Contribution of Sensors and update membrane potential
       memb[i] = (memb[i] +
-        (((sensor & sconnection[individual][i]) & 0b10000000) >> 7) +
-        (((sensor & sconnection[individual][i]) & 0b01000000) >> 6) +
-        (((sensor & sconnection[individual][i]) & 0b00100000) >> 5) +
-        (((sensor & sconnection[individual][i]) & 0b00010000) >> 4) +
-        (((sensor & sconnection[individual][i]) & 0b00001000) >> 3) +
-        (((sensor & sconnection[individual][i]) & 0b00000100) >> 2) +
-        (((sensor & sconnection[individual][i]) & 0b00000010) >> 1) +
-        (((sensor & sconnection[individual][i]) & 0b00000001) >> 0));
+                 (((sensor & sconnection[individual][i]) & 0b10000000) >> 7) +
+                 (((sensor & sconnection[individual][i]) & 0b01000000) >> 6) +
+                 (((sensor & sconnection[individual][i]) & 0b00100000) >> 5) +
+                 (((sensor & sconnection[individual][i]) & 0b00010000) >> 4) +
+                 (((sensor & sconnection[individual][i]) & 0b00001000) >> 3) +
+                 (((sensor & sconnection[individual][i]) & 0b00000100) >> 2) +
+                 (((sensor & sconnection[individual][i]) & 0b00000010) >> 1) +
+                 (((sensor & sconnection[individual][i]) & 0b00000001) >> 0));
 
       // Calculate Contribution of Positive Neurons and update membrane potential
       memb[i] = (memb[i] +
-        (((neuron & signs[individual] & nconnection[individual][i]) & 0b10000000) >> 7) +
-        (((neuron & signs[individual] & nconnection[individual][i]) & 0b01000000) >> 6) +
-        (((neuron & signs[individual] & nconnection[individual][i]) & 0b00100000) >> 5) +
-        (((neuron & signs[individual] & nconnection[individual][i]) & 0b00010000) >> 4) +
-        (((neuron & signs[individual] & nconnection[individual][i]) & 0b00001000) >> 3) +
-        (((neuron & signs[individual] & nconnection[individual][i]) & 0b00000100) >> 2) +
-        (((neuron & signs[individual] & nconnection[individual][i]) & 0b00000010) >> 1) +
-        (((neuron & signs[individual] & nconnection[individual][i]) & 0b00000001) >> 0));
+                 (((neuron & signs[individual] & nconnection[individual][i]) & 0b10000000) >> 7) +
+                 (((neuron & signs[individual] & nconnection[individual][i]) & 0b01000000) >> 6) +
+                 (((neuron & signs[individual] & nconnection[individual][i]) & 0b00100000) >> 5) +
+                 (((neuron & signs[individual] & nconnection[individual][i]) & 0b00010000) >> 4) +
+                 (((neuron & signs[individual] & nconnection[individual][i]) & 0b00001000) >> 3) +
+                 (((neuron & signs[individual] & nconnection[individual][i]) & 0b00000100) >> 2) +
+                 (((neuron & signs[individual] & nconnection[individual][i]) & 0b00000010) >> 1) +
+                 (((neuron & signs[individual] & nconnection[individual][i]) & 0b00000001) >> 0));
 
       // Calculate Contribution of Negative Neurons and update membrane potential
       memb[i] = (memb[i] -
-        (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b10000000) >> 7) -
-        (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b01000000) >> 6) -
-        (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00100000) >> 5) -
-        (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00010000) >> 4) -
-        (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00001000) >> 3) -
-        (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00000100) >> 2) -
-        (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00000010) >> 1) -
-        (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00000001) >> 0));
+                 (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b10000000) >> 7) -
+                 (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b01000000) >> 6) -
+                 (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00100000) >> 5) -
+                 (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00010000) >> 4) -
+                 (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00001000) >> 3) -
+                 (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00000100) >> 2) -
+                 (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00000010) >> 1) -
+                 (((neuron & ((~signs[individual]) & 0xFF) & nconnection[individual][i]) & 0b00000001) >> 0));
 
       // Minumimum of memb is 0
       if (memb[i] < minimum) {
@@ -184,7 +184,7 @@ void iterateNeuralNetwork(void) {
   //////////////////////////////////////////Motor Spike//////////////////////////////////////////////////
   // 1st neuron is left forward motor, 2nd is left backward motor, 3rd if right forward motor, 4th is right backward motor
   // If spiking add to total number of spikes
-  if ((neuron & 0x01) == 1) { // TODO: replace with "if (neuron & 0x01)"
+  if ((neuron & 0x01) == 1) {  // TODO: replace with "if (neuron & 0x01)"
     spikeFL++;
     totalspikeFL++;
   }
@@ -203,7 +203,7 @@ void iterateNeuralNetwork(void) {
 
   maxspikes++;
 
-  printf("%x %i %i %i %i\n\r", neuron, spikeFL, spikeBL, spikeFR, spikeBR);
+  printf("%x %d %d %d %d\n\r", neuron, spikeFL, spikeBL, spikeFR, spikeBR);
 
   ///////////////////////////////////////////Leakage/////////////////////////////////////////////////////
   for (k = 0; k < numneuron; k++) {
@@ -220,35 +220,35 @@ void initialize(void) {
   generateRandomSeed();
 
   sensorflag = 0;
-  evolveflag = 0; // Flag that indicates a mutation has just occurred
+  evolveflag = 0;  // Flag that indicates a mutation has just occurred
 
   // Neuron Variables
-  neuron = 0; // Output of Neurons (1 is spike, 0 is no spike), ie. 0b11001100 means neurons 2, 3, 6, 7 are spiking, sensors 0, 1, 4, 5 are not
-  sensor = 0; // Output of Sensors (1 is spike, 0 is no spike), ie. 0b11001100 means sensors 2, 3, 6, 7 are spiking, sensors 0, 1, 4, 5 are not
-  individual = (rand() % numindivid); // Current Individual (0 - 5)
+  neuron = 0;                          // Output of Neurons (1 is spike, 0 is no spike), ie. 0b11001100 means neurons 2, 3, 6, 7 are spiking, sensors 0, 1, 4, 5 are not
+  sensor = 0;                          // Output of Sensors (1 is spike, 0 is no spike), ie. 0b11001100 means sensors 2, 3, 6, 7 are spiking, sensors 0, 1, 4, 5 are not
+  individual = (rand() % numindivid);  // Current Individual (0 - 5)
 
   // The population will be initialized using random numbers and all fitness values will be set to zero
   // Use EEPROM if already started a population
   for (b = 0; b < numindivid; b++) {
-    signs[b] = (rand() % (1 << numneuron)); // Sign of Neurons (1 is positive, 0 is negative), ie. 0b00001111 means neurons 0, 1, 2, 3 are positive, neurons 4, 5, 6, 7 are not
+    signs[b] = (rand() % (1 << numneuron));  // Sign of Neurons (1 is positive, 0 is negative), ie. 0b00001111 means neurons 0, 1, 2, 3 are positive, neurons 4, 5, 6, 7 are not
 
-    printf("%x\n\r", signs[b]); // Debugging
+    printf("%x\n\r", signs[b]);  // Debugging
 
     for (a = 0; a < numneuron; a++) {
-      nconnection[b][a] = (rand() % (1 << numneuron)); // Connections from Neurons, each char describes connections for one neuron (1 is connection, 0 is no connection), ie. 0b11001010 means there are connections to this neuron from neurons 1, 3, 6, 7 and no connection from neurons 0, 2, 4, 5
-      sconnection[b][a] = (rand() % (1 << numsensor)); // Connections from Sensors, each char describes connections from one sensor (1 is connection, 0 is no connection)
-      memb[a] = 0; // Membrane Potential of each Neuron (minimum value of 0, initialized to 0)
+      nconnection[b][a] = (rand() % (1 << numneuron));  // Connections from Neurons, each char describes connections for one neuron (1 is connection, 0 is no connection), ie. 0b11001010 means there are connections to this neuron from neurons 1, 3, 6, 7 and no connection from neurons 0, 2, 4, 5
+      sconnection[b][a] = (rand() % (1 << numsensor));  // Connections from Sensors, each char describes connections from one sensor (1 is connection, 0 is no connection)
+      memb[a] = 0;                                      // Membrane Potential of each Neuron (minimum value of 0, initialized to 0)
     }
 
-    printf("%x\n\r", sconnection[b][0]); // Debugging
+    printf("%x\n\r", sconnection[b][0]);  // Debugging
 
-    fitness[b] = 0; // Fitness value for an individual
-    threshold[b] = (rand() % 4 + 3); // Membrane Threshold (5)
+    fitness[b] = 0;                   // Fitness value for an individual
+    threshold[b] = (rand() % 4 + 3);  // Membrane Threshold (5)
   }
 
-  leaking = 1; // Leaking Constant (1)
-  minimum = 0; // Miminum Membrane Potential (0)
-  randomint = 0; // Randomly generated integer
+  leaking = 1;    // Leaking Constant (1)
+  minimum = 0;    // Miminum Membrane Potential (0)
+  randomint = 0;  // Randomly generated integer
 
   // Spike Forward Motor Neurons to start
   addSpikeToNeuralNetwork();
@@ -262,52 +262,52 @@ void initialize(void) {
   oldthreshold = 0;
 
   // ADC Variables
-  sensorread = 0; // Values of Sensors being read
-  probability = 0; // Probability of getting a random noise spike
-  randomprob = 0; // Random probability
+  sensorread = 0;   // Values of Sensors being read
+  probability = 0;  // Probability of getting a random noise spike
+  randomprob = 0;   // Random probability
 
   // Motor Variables
   stepL = 0;
   stepR = 0;
-  dirL = 0; // Forward
-  dirR = 0; // Forward
-  spikeFL = 0; // Number of spikes during sensor update period (20 ms) generated by forward left neuron
-  totalspikeFL = 0; // Total spikes between evolution
-  spikeBL = 0; // Number of spikes during sensor update period (20 ms) generated by backward left neuron
-  totalspikeBL = 0; // Total spikes between evolution
-  spikeFR = 0; // Number of spikes during sensor update period (20 ms) generated by forward right neuron
-  totalspikeFR = 0; // Total spikes between evolution
-  spikeBR = 0; // Number of spikes during sensor update period (20 ms) generated by backward right neuron
-  totalspikeBR = 0; // Total spikes between evolution
-  maxspikes = 0; // Number of possible spikes during sensor update period
-  v2 = 0; // Motor Velocities
-  v3 = 0;
+  dirL = 0;          // Forward
+  dirR = 0;          // Forward
+  spikeFL = 0;       // Number of spikes during sensor update period (20 ms) generated by forward left neuron
+  totalspikeFL = 0;  // Total spikes between evolution
+  spikeBL = 0;       // Number of spikes during sensor update period (20 ms) generated by backward left neuron
+  totalspikeBL = 0;  // Total spikes between evolution
+  spikeFR = 0;       // Number of spikes during sensor update period (20 ms) generated by forward right neuron
+  totalspikeFR = 0;  // Total spikes between evolution
+  spikeBR = 0;       // Number of spikes during sensor update period (20 ms) generated by backward right neuron
+  totalspikeBR = 0;  // Total spikes between evolution
+  maxspikes = 0;     // Number of possible spikes during sensor update period
+  vL = 0;            // Motor Velocities
+  vR = 0;
 
   // Evolution Variables
-  newfitness = 0; // Calculates new fitness to compare with old fitnesses
-  keep = 0; // Keep determines if we will keep a mutation, is 1 if it the current individuals fitness is >= worst individuals fitness
-  collision = 0; // Indicates a collision for fitness calculation (0 no collision, 1 collision)
-  sensormaxactivity = 0; // Most active sensor value for fitness calculation (5 values for this based on most active sensor: 0 if nothing, .25 if between top and mid, .5 if between mid and bot, .75 if between bot and col, 1 if below or equal to col)
+  newfitness = 0;         // Calculates new fitness to compare with old fitnesses
+  keep = 0;               // Keep determines if we will keep a mutation, is 1 if it the current individuals fitness is >= worst individuals fitness
+  collision = 0;          // Indicates a collision for fitness calculation (0 no collision, 1 collision)
+  sensormaxactivity = 0;  // Most active sensor value for fitness calculation (5 values for this based on most active sensor: 0 if nothing, .25 if between top and mid, .5 if between mid and bot, .75 if between bot and col, 1 if below or equal to col)
   for (h = 0; h < (numsensor / 3); h++) {
-    sensoractivity[h] = 0; // Activity of 5 sensors based on values above to be maxed
+    sensoractivity[h] = 0;  // Activity of 5 sensors based on values above to be maxed
   };
-  worstindivid = 0; // Worst indiviudal used to determine keep
-  randn = 0; // Random Variables to access blocks in random individual for mutation
+  worstindivid = 0;  // Worst indiviudal used to determine keep
+  randn = 0;         // Random Variables to access blocks in random individual for mutation
   rands = 0;
-  change = 0; // Change in fitness (debugging)
+  change = 0;  // Change in fitness (debugging)
 
   // Fitness Store variables
-  bestfitness = 0; // Best Fitness so far
-  bestindivid = 0; // Best Individual
+  bestfitness = 0;  // Best Fitness so far
+  bestindivid = 0;  // Best Individual
   // Print out Current EEPROM Best Individual (if avaliable)
   // Print out Current EEPROM Best Fitness (if avaliable)
 }
 
 void updateSensors(void) {
-  collision = 0; // Reset collision before recalculating
+  collision = 0;  // Reset collision before recalculating
 
   for (x = 1; x <= ((numsensor / 3) + 1); x++) {
-  } // Ends for loop for sensor update
+  }  // Ends for loop for sensor update
 
   generateRandomSeed();
 
@@ -331,46 +331,38 @@ void updateSensors(void) {
   sensorflag = 1;
 }
 
-
 ///////////////////////////////////////Motor Speed Update//////////////////////////////////////////////
 // Motor speed for next 20ms is for each motor: spikesforward-spikesbackward scaled to [-8 cm/s, 8 cm/s]
 // Velocity will be determined by time of each step which is equal to .332485 cm / (spikesforward-spikesbackward)
 // Ie. this is initialized to .332485 cm / 3.32483 cm / s = .1 s = 100 ms
 // Concern here is that time will always be significantly higher than next motor udpate time, risk?
 void updateMotorSpeed(void) {
-  printf("updateMotorSpeed: %i %i %i %i %ld\n\r", spikeFL, spikeBL, spikeFR, spikeBR, maxspikes);
-  if (spikeFL >= spikeBL) { // If more forward then back, direction is forward
+  printf("updateMotorSpeed: %d %d %d %d %ld\n\r", spikeFL, spikeBL, spikeFR, spikeBR, maxspikes);
+  if (spikeFL >= spikeBL) {  // If more forward then back, direction is forward
     dirL = 0;
     // Multiply by 8.0 since maxspikes is actually maxspikes * 2 since if a neuron does spike it won't spike twice in a row because of the refractory period
-    v2 = ((float)((float)((float) spikeFL - (float) spikeBL) / (float) maxspikes) * 2.0 * 8.0);
+    vL = ((float)((float)((float)spikeFL - (float)spikeBL) / (float)maxspikes) * 2.0 * 8.0);
   } else {
     dirL = 1;
-    v2 = ((float)((float)((float) spikeBL - (float) spikeFL) / (float) maxspikes) * 2.0 * 8.0);
+    vL = ((float)((float)((float)spikeBL - (float)spikeFL) / (float)maxspikes) * 2.0 * 8.0);
   }
-  if (spikeFR >= spikeBR) { // If more forward then back, direction is forward
+  if (spikeFR >= spikeBR) {  // If more forward then back, direction is forward
     dirR = 0;
-    v3 = ((float)((float)((float) spikeFR - (float) spikeBR) / (float) maxspikes) * 2.0 * 8.0);
+    vR = ((float)((float)((float)spikeFR - (float)spikeBR) / (float)maxspikes) * 2.0 * 8.0);
   } else {
     dirR = 1;
-    v3 = ((float)((float)((float) spikeBR - (float) spikeFR) / (float) maxspikes) * 2.0 * 8.0);
+    vR = ((float)((float)((float)spikeBR - (float)spikeFR) / (float)maxspikes) * 2.0 * 8.0);
   }
 }
 
 void updateFitness(void) {
-  printf("updateFitness: %i %i %f %f\n\r", dirL, dirR, newfitness, sensormaxactivity);
-  if (dirL == 0 && dirR == 0 && collision == 0) // As long as going forward on both wheels and no collision
-  {
-    // TODO: math.abs(v2 - v3)
-    // newfitness = newfitness + (v2 + v3) * (1.0 - (math.abs(v2 - v3) / 8.0)) * (1.0 - (sensormaxactivity)); // Need to add something to sensor
-    // change = (v2+v3)*(1.0-(math.abs(v2 - v3)/8.0))*(1.0-(sensormaxactivity));
-    // newfitness += change;
-    // printf("%5.2f", change);
-    if (v2 >= v3) {
-      newfitness = newfitness + (v2 + v3) * (1.0 - ((v2 - v3) / 8.0)) * (1.0 - (sensormaxactivity)); // Need to add something to sensor
-    } else {
-      newfitness = newfitness + (v2 + v3) * (1.0 - ((v3 - v2) / 8.0)) * (1.0 - (sensormaxactivity)); // Need to add something to sensor
-    }
+  printf("updateFitness: %d %d %f %f\n\r", dirL, dirR, newfitness, sensormaxactivity);
+  if (dirL == 0 && dirR == 0 && collision == 0) {  // As long as going forward on both wheels and no collision
+    change = (vL + vR) * (1.0 - (fabs(vL - vR) / 8.0)) * (1.0 - sensormaxactivity);
+    newfitness += change;
+    printf("updateFitness: %5.2f\n", change);
   } else if ((dirL == 1 || dirR == 1) && collision == 0) {
+    // going backwards w/o obstacle
     // newfitness = newfitness + 0;
   } else if (collision == 1) {
     // newfitness = newfitness + 0;
@@ -389,7 +381,7 @@ void updateLeftMotor(void) {
 
 ////////////////////////////////////////////////////////////////
 void updateRightMotor(void) {
-  if (dirR) { // 0 is forward, 1 is backward
+  if (dirR) {  // 0 is forward, 1 is backward
     printf("right: backward\n");
   } else {
     printf("right: forward\n");
@@ -399,11 +391,11 @@ void updateRightMotor(void) {
 // Neuron Individual Selection and Mutation
 // Fitness Check - If not greater return to old version in population
 void evolve(void) {
-  printf("evolve begin: %i %i %i %i %i %i %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f\n\r", individual, threshold[individual], totalspikeFL, totalspikeBL, totalspikeFR, totalspikeBR, newfitness, fitness[0], fitness[1], fitness[2], fitness[3], fitness[4], fitness[5]);
+  printf("evolve begin: %d %d %d %d %d %d %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f\n\r", individual, threshold[individual], totalspikeFL, totalspikeBL, totalspikeFR, totalspikeBR, newfitness, fitness[0], fitness[1], fitness[2], fitness[3], fitness[4], fitness[5]);
 
   worstindivid = 0;
 
-  for (z = 1; z < numindivid; z++) { // Calculate Worst Individual
+  for (z = 1; z < numindivid; z++) {  // Calculate Worst Individual
     if (fitness[z] < fitness[worstindivid]) {
       worstindivid = z;
     }
@@ -416,7 +408,7 @@ void evolve(void) {
     keep = 0;
   }
 
-  newfitness = 0; // Reset newfitness
+  newfitness = 0;  // Reset newfitness
 
   if (keep == 0) {
     signs[individual] = oldsigns;
@@ -445,12 +437,14 @@ void evolve(void) {
   nconnection[individual][randn] = (nconnection[individual][randn] ^ (1 << (rand() % numneuron)));
   sconnection[individual][rands] = (sconnection[individual][rands] ^ (1 << (rand() % numsensor)));
   threshold[individual] = (threshold[individual] ^ (1 << (rand() % 4)));
-  if (threshold[individual] > 6 || threshold[individual] < 2) threshold[individual] = oldthreshold;
+  if (threshold[individual] > 6 || threshold[individual] < 2) {
+    threshold[individual] = oldthreshold;
+  }
 
   // Send signal
   evolveflag = 1;
 
-  printf("evolve end: %i %x %x %x %x\n\r", individual, signs[individual], nconnection[individual][randn], sconnection[individual][rands], sensor);
+  printf("evolve end: %d %x %x %x %x\n\r", individual, signs[individual], nconnection[individual][randn], sconnection[individual][rands], sensor);
 }
 
 void storeBestFitness(void) {
@@ -486,10 +480,11 @@ void storeBestFitness(void) {
   }
   // eebestfitnessmem[eeindex] = bestfitness;
   // eeindex = eeindex + 1;; // Index of fitness values/replacements
-} // Ends task 6
+}  // Ends task 6
 
 int main() {
   initialize();
+  iterateNeuralNetwork();
   evolve();
   updateSensors();
   updateMotorSpeed();
