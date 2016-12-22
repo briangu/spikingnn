@@ -6,7 +6,7 @@
 // These defines effect values everywhere and the majority of the program will adjust when these are changes
 // The two sections that will not adjust is the membrane potential update and the sensor update, please be aware of this
 #define numneuron 8
-#define numsensor 4  // Bits of Sensor
+#define numsensor 1  // Bits of Sensor
 #define numindivid 6
 
 unsigned int i, j, k, x, a, b, c, d, e, f, y, z, g, h, ii, jj, kk, xx, yy, zz;
@@ -102,6 +102,16 @@ void addSpikeToNeuralNetwork() {
   memb[7] = threshold[individual] + 20;
 }
 
+void dumpState() {
+  int e1;
+
+  printf("updatePos end: %f %f %f\n", angle, xpos, ypos);
+  printf("evolve begin: %d %d %d %d %d %d %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f\n\r", individual, threshold[individual], totalspikeFL, totalspikeBL, totalspikeFR, totalspikeBR, newfitness, fitness[0], fitness[1], fitness[2], fitness[3], fitness[4], fitness[5]);
+  for (e1 = 0; e1 < numindivid; e1++) {
+    printf("evolve end: %d %x %x %x %x\n\r", e1, signs[e1], nconnection[e1][randn], sconnection[e1][rands], sensor);
+  }
+}
+
 ////////////////////////////////////////////////////////////////
 void initialize(void) {
   generateRandomSeed();
@@ -117,20 +127,20 @@ void initialize(void) {
   // The population will be initialized using random numbers and all fitness values will be set to zero
   // Use EEPROM if already started a population
   for (b = 0; b < numindivid; b++) {
-    signs[b] = 0xAA;  //(rand() % (1 << numneuron));  // Sign of Neurons (1 is positive, 0 is negative), ie. 0b00001111 means neurons 0, 1, 2, 3 are positive, neurons 4, 5, 6, 7 are not
+    signs[b] = (rand() % (1 << numneuron));  // Sign of Neurons (1 is positive, 0 is negative), ie. 0b00001111 means neurons 0, 1, 2, 3 are positive, neurons 4, 5, 6, 7 are not
 
     // printf("%x\n\r", signs[b]);  // Debugging
 
     for (a = 0; a < numneuron; a++) {
-      nconnection[b][a] = 0x8A ;//(rand() % (1 << numneuron));  // Connections from Neurons, each char describes connections for one neuron (1 is connection, 0 is no connection), ie. 0b11001010 means there are connections to this neuron from neurons 1, 3, 6, 7 and no connection from neurons 0, 2, 4, 5
-      sconnection[b][a] = 0xFF;                         // (rand() % (1 << numsensor));  // Connections from Sensors, each char describes connections from one sensor (1 is connection, 0 is no connection)
+      nconnection[b][a] = (rand() % (1 << numneuron));  // Connections from Neurons, each char describes connections for one neuron (1 is connection, 0 is no connection), ie. 0b11001010 means there are connections to this neuron from neurons 1, 3, 6, 7 and no connection from neurons 0, 2, 4, 5
+      sconnection[b][a] = (rand() % (1 << numsensor));  // Connections from Sensors, each char describes connections from one sensor (1 is connection, 0 is no connection)
       memb[a] = 0;                                      // Membrane Potential of each Neuron (minimum value of 0, initialized to 0)
     }
 
     // printf("%x\n\r", sconnection[b][0]);  // Debugging
 
     fitness[b] = 0;                   // Fitness value for an individual
-    threshold[b] = 4; //(rand() % 4 + 3);  // Membrane Threshold (5)
+    threshold[b] = (rand() % 4 + 3);  // Membrane Threshold (5)
   }
 
   leaking = 1;    // Leaking Constant (1)
@@ -144,7 +154,7 @@ void initialize(void) {
   oldsigns = signs[individual];
   for (c = 0; c < numneuron; c++) {
     oldnconnection[c] = nconnection[individual][c];
-    // oldsconnection[c] = sconnection[individual][c];
+    oldsconnection[c] = sconnection[individual][c];
   }
   oldthreshold = 0;
 
@@ -183,8 +193,8 @@ void initialize(void) {
   bestfitness = 0;  // Best Fitness so far
   bestindivid = 0;  // Best Individual
 
-  width = 256;
-  height = 256;
+  width = 512;
+  height = 512;
   xpos = width / 2;
   ypos = height / 2;
   angle = 0;
@@ -315,25 +325,42 @@ void iterateNeuralNetwork(void) {
 }
 
 void updateSensors(void) {
+  float xOffset;
+  float yOffset;
+
   collision = 0;  // Reset collision before recalculating
 
   // for (x = 0; x < numsensor; x++) {
   // }
 
-  if (xpos + MARGIN >= width) {
+  // if (xpos + MARGIN >= width) {
+  //   collision |= 0x1;
+  // }
+  // if (xpos - MARGIN <= 0) {
+  //   collision |= 0x2;
+  // }
+  // if (ypos + MARGIN >= height) {
+  //   collision |= 0x4;
+  // }
+  // if (ypos - MARGIN <= 0) {
+  //   collision |= 0x8;
+  // }
+
+  xOffset = cos(angle * 0.0174533) * MARGIN;
+  yOffset = sin(angle * 0.0174533) * MARGIN;
+
+  if (((xpos + xOffset) >= width) || ((xpos + xOffset) <= 0)) {
     collision |= 0x1;
   }
-  if (xpos - MARGIN <= 0) {
-    collision |= 0x2;
-  }
-  if (ypos + MARGIN >= height) {
-    collision |= 0x4;
-  }
-  if (ypos - MARGIN <= 0) {
-    collision |= 0x8;
+  if (((ypos + yOffset) >= height) || ((ypos + yOffset) <= 0)) {
+    collision |= 0x1;
   }
 
   sensorread = collision;
+
+  // if (collision) {
+  //   printf("updateSensors: xpos %f ypos %f xOffset %f yOffset %f sensorread %x\n", xpos, ypos, xOffset, yOffset, sensorread);
+  // }
 
   // generateRandomSeed();
 
@@ -396,7 +423,7 @@ void updatePos(void) {
   float sinSum;
 
   // compute the percentage of max distance coverable in tick for each wheel
-  // printf("updatePos begin: angle %f xpos %f ypos %f vL %f vR %f\n", angle, xpos, ypos, vL, vR);
+  // printf("updatePos begin: angle %f xpos %f ypos %f dirL %d vL %f dirR %d vR %f\n", angle, xpos, ypos, dirL, vL, dirR, vR);
   angle += (dirL ? 1 : -1) * (vL * 10.0f);
   // printf("angle 1: %f\n", angle);
   angle += (dirR ? -1 : 1) * (vR * 10.0f);
@@ -422,21 +449,6 @@ void updatePos(void) {
   // printf("sin sum: %f %f\n", sinSum, sinSum / 2.0f);
   xpos += cosSum / 2.0f;
   ypos += sinSum / 2.0f;
-  // if (dirL) {
-  //   if (dirR) {
-  //     xpos += 0;
-  //     ypos -= 1;
-  //   } else {
-
-  //   }
-  // } else {
-  //   if (dirR) {
-
-  //   } else {
-  //     xpos += 0;
-  //     ypos += 1;
-  //   }
-  // }
 
   if (xpos > width) {
     xpos = width;
@@ -450,6 +462,7 @@ void updatePos(void) {
   if (ypos < 0) {
     ypos = 0;
   }
+
   // printf("updatePos end: %f %f %f\n", angle, xpos, ypos);
 }
 
@@ -458,8 +471,8 @@ void updatePos(void) {
 void evolve(void) {
   int e1;
 
-  printf("updatePos end: %f %f %f\n", angle, xpos, ypos);
-  printf("evolve begin: %d %d %d %d %d %d %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f\n\r", individual, threshold[individual], totalspikeFL, totalspikeBL, totalspikeFR, totalspikeBR, newfitness, fitness[0], fitness[1], fitness[2], fitness[3], fitness[4], fitness[5]);
+  // printf("updatePos end: %f %f %f\n", angle, xpos, ypos);
+  // printf("evolve begin: %d %d %d %d %d %d %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f\n\r", individual, threshold[individual], totalspikeFL, totalspikeBL, totalspikeFR, totalspikeBR, newfitness, fitness[0], fitness[1], fitness[2], fitness[3], fitness[4], fitness[5]);
 
   worstindivid = 0;
 
@@ -482,7 +495,7 @@ void evolve(void) {
     signs[individual] = oldsigns;
     for (d = 0; d < numneuron; d++) {
       nconnection[individual][d] = oldnconnection[d];
-      // sconnection[individual][d] = oldsconnection[d];
+      sconnection[individual][d] = oldsconnection[d];
     }
     threshold[individual] = oldthreshold;
   }
@@ -494,7 +507,7 @@ void evolve(void) {
   oldsigns = signs[individual];
   for (e = 0; e < numneuron; e++) {
     oldnconnection[e] = nconnection[individual][e];
-    // oldsconnection[e] = sconnection[individual][e];
+    oldsconnection[e] = sconnection[individual][e];
   }
   oldthreshold = threshold[individual];
 
@@ -503,7 +516,7 @@ void evolve(void) {
   randn = (rand() % numneuron);
   rands = (rand() % numsensor);
   nconnection[individual][randn] = (nconnection[individual][randn] ^ (1 << (rand() % numneuron)));
-  // sconnection[individual][rands] = (sconnection[individual][rands] ^ (1 << (rand() % numsensor)));
+  sconnection[individual][rands] = (sconnection[individual][rands] ^ (1 << (rand() % numsensor)));
   threshold[individual] = (threshold[individual] ^ (1 << (rand() % 4)));
   if (threshold[individual] > 6 || threshold[individual] < 2) {
     threshold[individual] = oldthreshold;
@@ -512,9 +525,9 @@ void evolve(void) {
   // Send signal
   evolveflag = 1;
 
-  for (e1 = 0; e1 < numindivid; e1++) {
-    printf("evolve end: %d %x %x %x %x\n\r", e1, signs[e1], nconnection[e1][randn], sconnection[e1][rands], sensor);
-  }
+  // for (e1 = 0; e1 < numindivid; e1++) {
+  //   printf("evolve end: %d %x %x %x %x\n\r", e1, signs[e1], nconnection[e1][randn], sconnection[e1][rands], sensor);
+  // }
 }
 
 void storeBestFitness(void) {
@@ -559,7 +572,11 @@ int main() {
   initialize();
 
   for (generation = 0; generation < 1000000; generation++) {
-    printf("generation: %d\n", generation);
+
+    if (generation % 100 == 0) {
+      printf("generation: %d\n", generation);
+      dumpState();
+    }
 
     xpos = width / 2;
     ypos = height / 2;
@@ -651,4 +668,48 @@ int main() {
 //   for (i = 0; i < 1000; i++) {
 //     printf("%d\n", mapRand());
 //   }
+// }
+
+// int main() {
+//   width = 100;
+//   height = 100;
+//   xpos = width / 2;
+//   ypos = height / 2;
+//   angle = 0;
+//   updateSensors();
+
+//   xpos = width / 2;
+//   ypos = height / 2;
+//   angle = 90;
+//   updateSensors();
+
+//   xpos = width / 2;
+//   ypos = height / 2;
+//   angle = 180;
+//   updateSensors();
+
+//   xpos = width / 2;
+//   ypos = height / 2;
+//   angle = 270;
+//   updateSensors();
+
+//   xpos = width - MARGIN;
+//   ypos = height / 2;
+//   angle = 0;
+//   updateSensors();
+
+//   xpos = width - MARGIN;
+//   ypos = height / 2;
+//   angle = 90;
+//   updateSensors();
+
+//   xpos = width - MARGIN;
+//   ypos = height / 2;
+//   angle = 180;
+//   updateSensors();
+
+//   xpos = width - MARGIN;
+//   ypos = height / 2;
+//   angle = 270;
+//   updateSensors();
 // }
