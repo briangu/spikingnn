@@ -183,8 +183,8 @@ void initialize(void) {
   bestfitness = 0;  // Best Fitness so far
   bestindivid = 0;  // Best Individual
 
-  width = 20;
-  height = 20;
+  width = 256;
+  height = 256;
   xpos = width / 2;
   ypos = height / 2;
   angle = 0;
@@ -335,7 +335,7 @@ void updateSensors(void) {
 
   sensorread = collision;
 
-  generateRandomSeed();
+  // generateRandomSeed();
 
   // Ready sensor and motor update
   sensorflag = 1;
@@ -350,9 +350,10 @@ void updateMotorSpeed(void) {
   // printf("updateMotorSpeed begin: %d %d %d %d %ld\n\r", spikeFL, spikeBL, spikeFR, spikeBR, maxspikes);
   // Multiply by 8.0 since maxspikes is actually maxspikes * 2 since if a neuron does spike it won't spike twice in a row because of the refractory period
   dirL = (spikeFL < spikeBL);
-  vL = ((float)((float)(fabs((float)spikeFL - (float)spikeBL)) / (float)maxspikes) * 2.0 * 8.0);
+  // vL = ((float)((float)(fabs((float)spikeFL - (float)spikeBL)) / (float)maxspikes) * 2.0 * 8.0);
+  vL = ((float)((float)(fabs((float)spikeFL - (float)spikeBL)) / (float)maxspikes));
   dirR = (spikeFR < spikeBR);
-  vR = ((float)((float)(fabs((float)spikeFR - (float)spikeBR)) / (float)maxspikes) * 2.0 * 8.0);
+  vR = ((float)((float)(fabs((float)spikeFR - (float)spikeBR)) / (float)maxspikes));
   // printf("updateMotorSpeed end: dirL %d  vL %f dirR %d vR %f\n\r", dirL, vL, dirR, vR);
 }
 
@@ -397,7 +398,9 @@ void updatePos(void) {
   // compute the percentage of max distance coverable in tick for each wheel
   // printf("updatePos begin: angle %f xpos %f ypos %f vL %f vR %f\n", angle, xpos, ypos, vL, vR);
   angle += (dirL ? 1 : -1) * (vL * 10.0f);
+  // printf("angle 1: %f\n", angle);
   angle += (dirR ? -1 : 1) * (vR * 10.0f);
+  // printf("angle 2: %f\n", angle);
   while (angle >= 360) {
     angle -= 360;
   }
@@ -409,6 +412,12 @@ void updatePos(void) {
   // printf("R: cos: %f sin: %f\n", vR * cos(angle * 0.0174533), vR * sin(angle * 0.0174533));
   cosSum = vL * cos(angle * 0.0174533) + vR * cos(angle * 0.0174533);
   sinSum = vL * sin(angle * 0.0174533) + vR * sin(angle * 0.0174533);
+  // printf("cos sum: %f %f\n", cosSum, cosSum / 2.0f);
+  // printf("sin sum: %f %f\n", sinSum, sinSum / 2.0f);
+  if (dirL == dirR && dirL) {
+    cosSum *= -1;
+    sinSum *= -1;
+  }
   // printf("cos sum: %f %f\n", cosSum, cosSum / 2.0f);
   // printf("sin sum: %f %f\n", sinSum, sinSum / 2.0f);
   xpos += cosSum / 2.0f;
@@ -563,12 +572,12 @@ int main() {
         updateSensors();
         updateMotorSpeed();  // Only do Motor Speed Update every 160 ms, this allows for max 8 cm/s at least one movemnet since it takes 41ms to execute
         updateFitness();
-        updatePos();
+        // updatePos();
       }
 
       // updateLeftMotor();
       // updateRightMotor();
-      // updatePos();
+      updatePos();
     }
 
     evolve();
@@ -595,6 +604,47 @@ int main() {
 //       }
 //     }
 //   }
+// }
+
+// int main() {
+//   width = 100;
+//   height = 100;
+
+//   xpos = width / 2;
+//   ypos = height / 2;
+//   angle = 0;
+//   vL = 1.0f;
+//   vR = 1.0f;
+//   dirL = 0;
+//   dirR = 0;
+//   updatePos();
+
+//   xpos = width / 2;
+//   ypos = height / 2;
+//   angle = 0;
+//   vL = 1.0f;
+//   vR = 1.0f;
+//   dirL = 1;
+//   dirR = 1;
+//   updatePos();
+
+//   xpos = width / 2;
+//   ypos = height / 2;
+//   angle = 0;
+//   vL = 1.0f;
+//   vR = 1.0f;
+//   dirL = 0;
+//   dirR = 1;
+//   updatePos();
+
+//   xpos = width / 2;
+//   ypos = height / 2;
+//   angle = 0;
+//   vL = 1.0f;
+//   vR = 1.0f;
+//   dirL = 1;
+//   dirR = 0;
+//   updatePos();
 // }
 
 // int main() {
